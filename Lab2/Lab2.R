@@ -102,7 +102,8 @@ question4 <- function() {
   }
   
   # now perform the t-test
-  t.test(anim_same, anim_diff)
+  print("T-test for same vs dif animacy")
+  print(t.test(anim_same, anim_diff))
 }
 
 question5 <- function() {
@@ -142,41 +143,78 @@ question5 <- function() {
 question6 <- function() {
   # make vector of 0's and 1's for faceness
   tableMap_faceness <<- data.frame(matrix(NA, nrow = 92, ncol = 92))
+  tableMap_facenessDiff <<- data.frame(matrix(NA, nrow = 92, ncol = 92))
   for(i in 1:length(table_categoryVecs[, 1])) {
     for(j in 1:length(table_categoryVecs[, 1])) {
       if(table_categoryVecs[i, 6] == table_categoryVecs[j, 6]) { # col 6 is face
         tableMap_faceness[i, j] <<- TRUE
+        tableMap_facenessDiff[i, j] <<- FALSE
       }
       else {
         tableMap_faceness[i, j] <<- FALSE
+        tableMap_facenessDiff[i, j] <<- TRUE
       }
     }
   }
   
-  # test <- table_neuralResponses[with(tableMap_animacy, tableMap_animacy == 1), ]
-  # table_anim <- 
-  #   for(i in 1:92) {
-  #     for(j in 1:92) {
-  #       if(tableMap_faceness[i, j] == 1) { # same animacy
-  #         
-  #       }
-  #     }
-  #   } 
+  # apply the mask to make two tables of same-animacy vs diff-animacy on the RDM of orig data
+  face_same <- RDM_Comparisons_t[[13]]
+  face_same[] <- as.matrix(RDM_Comparisons_t[[13]])[as.logical(NA^!tableMap_faceness)]
+  
+  face_diff <- RDM_Comparisons_t[[13]]
+  face_diff[] <- as.matrix(RDM_Comparisons_t[[13]])[as.logical(NA^!tableMap_facenessDiff)]
+  
+  # cut the tables in half along the diagonal, so we don't double compare in the t-test
+  for(row in 1:92) {
+    for(col in row:92){
+      face_same[row, col] <- NA
+      face_diff[row, col] <- NA
+    }
+  }
+  
+  # now perform the t-test
+  print("T-test for face vs non-face")
+  print(t.test(face_same, face_diff))
+  
 }
 
 question8 <- function() {
+  # TODO: need to combine with animacy. this is animacy + humaness, not just humanness
   # make vector of 0's and 1's for humanness
-  tableMap_humanness <<- data.frame(matrix(NA, nrow = 92, ncol = 92))
-  for(i in 1:length(table_categoryVecs[, 1])) {
-    for(j in 1:length(table_categoryVecs[, 1])) {
+  tableMap_humanness <<- matrix(NA, nrow = 92, ncol = 92)
+  tableMap_humannessDiff <<- matrix(NA, nrow = 92, ncol = 92)
+  for(i in 1:92) {
+    for(j in 1:92) {
       if(table_categoryVecs[i, 3] == table_categoryVecs[j, 3]) { # col 3 is human
-        tableMap_humanness[i, j] <<- TRUE
+        tableMap_humanness[i, j] <<- 1
+        # tableMap_humannessDiff[i, j] <<- FALSE
       }
       else {
-        tableMap_humanness[i, j] <<- FALSE
+        tableMap_humanness[i, j] <<- 0
+        # tableMap_humannessDiff[i, j] <<- TRUE
       }
     }
   }
+  
+  # # apply the mask to make two tables of same-animacy vs diff-animacy on the RDM of orig data
+  # human_same <- RDM_Comparisons_t[[13]]
+  # human_same[] <- as.matrix(RDM_Comparisons_t[[13]])[as.logical(NA^!tableMap_humanness)]
+  # 
+  # human_diff <- RDM_Comparisons_t[[13]]
+  # human_diff[] <- as.matrix(RDM_Comparisons_t[[13]])[as.logical(NA^!tableMap_humannessDiff)]
+  # 
+  # # cut the tables in half along the diagonal, so we don't double compare in the t-test
+  # for(row in 1:92) {
+  #   for(col in row:92){
+  #     human_same[row, col] <- NA
+  #     human_diff[row, col] <- NA
+  #   }
+  # }
+  # 
+  # # now perform the t-test
+  # print("T-test for humanlike vs non-humanlike")
+  # print(t.test(human_same, human_diff))
+  
 }
 
 
