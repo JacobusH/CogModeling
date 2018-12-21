@@ -96,10 +96,8 @@ question4 <- function() {
   # cut the tables in half along the diagonal, so we don't double compare in the t-test
   for(row in 1:92) {
     for(col in row:92){
-      if(row != col) {
-        anim_same[row, col] <- NA
-        anim_diff[row, col] <- NA
-      }
+      anim_same[row, col] <- NA
+      anim_diff[row, col] <- NA
     }
   }
   
