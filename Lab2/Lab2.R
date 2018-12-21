@@ -107,6 +107,36 @@ question4 <- function() {
 
 question5 <- function() {
   # compare t and p values for indiv subj against avg sub from q3
+  
+  # apply the mask to make two tables of same-animacy vs diff-animacy on the RDM of a subject
+  anim_same_subj <- RDM_Comparisons_t[[2]]
+  anim_same_subj[] <- as.matrix(RDM_Comparisons_t[[13]])[as.logical(NA^!tableMap_animacy)]
+  anim_diff_subj <- RDM_Comparisons_t[[2]]
+  anim_diff_subj[] <- as.matrix(RDM_Comparisons_t[[13]])[as.logical(NA^!tableMap_animacyDiff)]
+  
+  # apply the mask to make two tables of same-animacy vs diff-animacy on the RDM of avg subject
+  anim_same_avgSubj <- table_avgSubject
+  anim_same_avgSubj[] <- as.matrix(table_avgSubject)[as.logical(NA^!tableMap_animacy)]
+  anim_diff_avgSubj <- table_avgSubject
+  anim_diff_avgSubj[] <- as.matrix(table_avgSubject)[as.logical(NA^!tableMap_animacyDiff)]
+  
+  # cut the tables in half along the diagonal, so we don't double compare in the t-test
+  for(row in 1:92) {
+    for(col in row:92){
+      anim_same_subj[row, col] <- NA
+      anim_diff_subj[row, col] <- NA
+      
+      anim_same_avgSubj[row, col] <- NA
+      anim_diff_avgSubj[row, col] <- NA
+    }
+  }
+  
+  # now perform the t-test
+  normal_subj <- t.test(anim_same_subj, anim_diff_subj)
+  avg_subj <- t.test(anim_same_avgSubj, anim_diff_avgSubj)
+  
+  tmp <- 'tmp'
+  
 }
 
 question6 <- function() {
