@@ -51,12 +51,12 @@ question2.plot <- function(idx, asImage = FALSE) {
 }
 
 question3 <- function() {
-  table_avgSubject <<- data.frame(matrix(NA, nrow = 92, ncol = 100))
+  table_avgSubject <<- data.frame(matrix(NA, nrow = 92, ncol = 92))
   for(row in 1:92) {
-    for(col in 1:100) {
+    for(col in 1:92) {
       cur_vec <- c()
       for(cur_tableIdx in 1:12) {
-        cur_vec <- c(cur_vec, list_subjects[[cur_tableIdx]][row, col])
+        cur_vec <- c(cur_vec, RDM_Comparisons_t[[cur_tableIdx]][row, col])
       }
       cur_cellMean <- mean(cur_vec)
       table_avgSubject[row, col] <<- cur_cellMean 
@@ -68,7 +68,7 @@ question4 <- function() {
   # use col 1 of category_vectors | animate objects
   # compare each pair of values | 1 for same, 0 for different
   # use two-sided unpaired t-test to compare dissimilarity of pairs w/ different animacy
-  # use original data for this question, comapre every row
+  # use original data for this question, compare every row
 
   # make vector of 0's and 1's for animacy
   tableMap_animacy <<- data.frame(matrix(NA, nrow = 92, ncol = 92))
@@ -104,6 +104,9 @@ question4 <- function() {
   # now perform the t-test
   print("T-test for same vs dif animacy")
   print(t.test(anim_same, anim_diff))
+  
+  # set up for q9
+  q9_animacy <<- anim_same
 }
 
 question5 <- function() {
@@ -111,9 +114,9 @@ question5 <- function() {
   
   # apply the mask to make two tables of same-animacy vs diff-animacy on the RDM of a subject
   anim_same_subj <- RDM_Comparisons_t[[2]]
-  anim_same_subj[] <- as.matrix(RDM_Comparisons_t[[13]])[as.logical(NA^!tableMap_animacy)]
+  anim_same_subj[] <- as.matrix(RDM_Comparisons_t[[2]])[as.logical(NA^!tableMap_animacy)]
   anim_diff_subj <- RDM_Comparisons_t[[2]]
-  anim_diff_subj[] <- as.matrix(RDM_Comparisons_t[[13]])[as.logical(NA^!tableMap_animacyDiff)]
+  anim_diff_subj[] <- as.matrix(RDM_Comparisons_t[[2]])[as.logical(NA^!tableMap_animacyDiff)]
   
   # apply the mask to make two tables of same-animacy vs diff-animacy on the RDM of avg subject
   anim_same_avgSubj <- table_avgSubject
@@ -142,79 +145,104 @@ question5 <- function() {
 
 question6 <- function() {
   # make vector of 0's and 1's for faceness
-  tableMap_faceness <<- data.frame(matrix(NA, nrow = 92, ncol = 92))
-  tableMap_facenessDiff <<- data.frame(matrix(NA, nrow = 92, ncol = 92))
-  for(i in 1:length(table_categoryVecs[, 1])) {
-    for(j in 1:length(table_categoryVecs[, 1])) {
-      if(table_categoryVecs[i, 6] == table_categoryVecs[j, 6]) { # col 6 is face
-        tableMap_faceness[i, j] <<- TRUE
-        tableMap_facenessDiff[i, j] <<- FALSE
-      }
-      else {
-        tableMap_faceness[i, j] <<- FALSE
-        tableMap_facenessDiff[i, j] <<- TRUE
+  face_vector <- table_categoryVecs[,6]
+  same_faceness <- c()
+  diff_faceness <- c()
+  
+  for(i in 1:91){
+    for(r in (i + 1):92){
+      if(face_vector[i] == face_vector[r]){
+        same_faceness <- c(same_faceness, RDM_Comparisons_t[[13]][i,r])
+      } else if(face_vector[i] != face_vector[r]){
+        diff_faceness <- c(diff_faceness, RDM_Comparisons_t[[13]][i,r])
       }
     }
   }
   
-  # apply the mask to make two tables of same-animacy vs diff-animacy on the RDM of orig data
-  face_same <- RDM_Comparisons_t[[13]]
-  face_same[] <- as.matrix(RDM_Comparisons_t[[13]])[as.logical(NA^!tableMap_faceness)]
-  
-  face_diff <- RDM_Comparisons_t[[13]]
-  face_diff[] <- as.matrix(RDM_Comparisons_t[[13]])[as.logical(NA^!tableMap_facenessDiff)]
-  
-  # cut the tables in half along the diagonal, so we don't double compare in the t-test
-  for(row in 1:92) {
-    for(col in row:92){
-      face_same[row, col] <- NA
-      face_diff[row, col] <- NA
-    }
-  }
-  
-  # now perform the t-test
-  print("T-test for face vs non-face")
+  #t-test between same faceness and different faceness
+  print("T-test for same vs dif faceness")
   print(t.test(face_same, face_diff))
+  
+  
+}
+
+question7 <- function(){
+  animacy_vector <<- table_categoryVecs[,1]
+  face_same_wo_inanimate <- face_same
+  face_diff_wo_inanimate <- face_diff
+  
+  #removing values, where either of the objects is inanimate
+  for(i in 1:92){
+    for(r in 1:92){
+      if(animacy_vector[i] == 0 || animacy_vector[r] == 0){
+        face_same_wo_inanimate[i][r] <- NA
+        face_diff_wo_inanimate[i][r] <- NA
+      }
+    }
+  }
+  
+  #t-test between same faceness between different faceness by comparing only with animate objects
+  print("T-test for same vs dif faceness")
+  print(t.test(face_same_wo_inanimate, face_diff_wo_inanimate))
+  
+  # setup for q9
+  q9_faceness <<- face_same_wo_inanimate
   
 }
 
 question8 <- function() {
   # TODO: need to combine with animacy. this is animacy + humaness, not just humanness
   # make vector of 0's and 1's for humanness
-  tableMap_humanness <<- matrix(NA, nrow = 92, ncol = 92)
-  tableMap_humannessDiff <<- matrix(NA, nrow = 92, ncol = 92)
+  # keep only animate-animate, get rid of animate-in and in-in
+  animacy_vector <<- table_categoryVecs[,1]
+  humaness_vector <<- table_categoryVecs[,3]
+  vec_same <- c()
+  vec_diff <- c()
+  
   for(i in 1:92) {
-    for(j in 1:92) {
-      if(table_categoryVecs[i, 3] == table_categoryVecs[j, 3]) { # col 3 is human
-        tableMap_humanness[i, j] <<- 1
-        # tableMap_humannessDiff[i, j] <<- FALSE
-      }
-      else {
-        tableMap_humanness[i, j] <<- 0
-        # tableMap_humannessDiff[i, j] <<- TRUE
+    for(j in (i + 1):92) {
+      if(animacy_vector[i] == 1 && animacy_vector[j] == 1
+         && humaness_vector[i] == humaness_vector[j] ) { # if both are animate and have same humaness
+            vec_same <- c(vec_same, RDM_Comparisons_t[[13]][i, j])
+      } 
+      else if(animacy_vector[i] == 1 && animacy_vector[j] == 1
+             && !(humaness_vector[i] == humaness_vector[j]) ) {# both animate and diff humaness
+        vec_diff <- c(vec_diff, RDM_Comparisons_t[[13]][i, j])
       }
     }
   }
   
-  # # apply the mask to make two tables of same-animacy vs diff-animacy on the RDM of orig data
-  # human_same <- RDM_Comparisons_t[[13]]
-  # human_same[] <- as.matrix(RDM_Comparisons_t[[13]])[as.logical(NA^!tableMap_humanness)]
-  # 
-  # human_diff <- RDM_Comparisons_t[[13]]
-  # human_diff[] <- as.matrix(RDM_Comparisons_t[[13]])[as.logical(NA^!tableMap_humannessDiff)]
-  # 
-  # # cut the tables in half along the diagonal, so we don't double compare in the t-test
-  # for(row in 1:92) {
-  #   for(col in row:92){
-  #     human_same[row, col] <- NA
-  #     human_diff[row, col] <- NA
-  #   }
-  # }
-  # 
-  # # now perform the t-test
-  # print("T-test for humanlike vs non-humanlike")
-  # print(t.test(human_same, human_diff))
-  
+  #t-test between same faceness between different faceness by comparing only with animate objects
+  print("T-test for same vs dif animacy+humaness")
+  print(t.test(vec_same, vec_diff))
 }
 
+question9 <- function() {
+  # from the faceness, make faceness + both-animate
+  tmp <- q9_faceness
+  for(i in 1:92) {
+    for(j in 1:92) {
+      # set anything not animate-animate to NA
+      if(table_categoryVecs[i, 1] != 1 && table_categoryVecs[j, 1] != 1) { 
+        tmp[i, j] <- NA
+      }
+    }
+  }
+  
+  
+  # use 3 groups, original, faceness, animacy
+  vec_orig <- as.vector(RDM_Comparisons_t[[13]])
+  
+  vec_animacy <- as.vector(q9_animacy)
+  vec_animacy[is.na(vec_animacy)] <- 0
+
+  vec_facenessAnimacy <- as.vector(tmp)
+  vec_facenessAnimacy[is.na(vec_facenessAnimacy)] <- 0
+  
+  res <- cbind(vec_orig, vec_animacy, vec_facenessAnimacy)
+  colnames(res) <- c("orig", "animacy", "facenessAnimacy")
+  
+  ovv <- aov(orig ~ animacy + facenessAnimacy, data = as.data.frame(res))
+  print(summary(ovv))
+}
 
