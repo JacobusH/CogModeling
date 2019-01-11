@@ -1,4 +1,5 @@
 library(raster)  
+library(heplots)
 
 load.data <- function() {
   # loads necessary data into global variables
@@ -242,7 +243,11 @@ question9 <- function() {
   res <- cbind(vec_orig, vec_animacy, vec_facenessAnimacy)
   colnames(res) <- c("orig", "animacy", "facenessAnimacy")
   
-  ovv <- aov(orig ~ animacy + facenessAnimacy, data = as.data.frame(res))
+  ovv <<- aov(orig ~ animacy + facenessAnimacy, data = as.data.frame(res))
   print(summary(ovv))
+}
+
+question10 <- function() {
+  print(etasq(ovv))
 }
 

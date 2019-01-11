@@ -1,0 +1,38 @@
+character 1:     m=man, w=woman, b=boy, g=girl
+characters 2-3:  talker number
+characters 4-5:  vowel (ae="had", ah="hod", aw="hawed", eh="head", er="heard",
+                        ey="haid", ih="hid", iy="heed", oa=/o/ as in "boat",
+			oo="hood", uh="hud", uw="who'd")
+
+col1:  filename 
+col2:  duration in msec 
+col3:  f0 at "steady state" 
+col4:  F1 at "steady state" 
+col5:  F2 at "steady state" 
+col6:  F3 at "steady state" 
+col7:  F1 at 10% of vowel duration 
+col8:  F2 at 10% of vowel duration 
+col9:  F3 at 10% of vowel duration 
+col10: F1 at 20% of vowel duration 
+col11: F2 at 20% of vowel duration 
+col12: F3 at 20% of vowel duration 
+col13: F1 at 30% of vowel duration 
+col14: F2 at 30% of vowel duration 
+col15: F3 at 30% of vowel duration 
+col16: F1 at 40% of vowel duration 
+col17: F2 at 40% of vowel duration 
+col18: F3 at 40% of vowel duration 
+col19: F1 at 50% of vowel duration 
+col20: F2 at 50% of vowel duration 
+col21: F3 at 50% of vowel duration 
+col22: F1 at 60% of vowel duration 
+col23: F2 at 60% of vowel duration 
+col24: F3 at 60% of vowel duration 
+col25: F1 at 70% of vowel duration 
+col26: F2 at 70% of vowel duration 
+col27: F3 at 70% of vowel duration 
+col28: F1 at 80% of vowel duration 
+col29: F2 at 80% of vowel duration 
+col30: F3 at 80% of vowel duration 
+
+Note: An entry of zero means that the formant was not measurable.
