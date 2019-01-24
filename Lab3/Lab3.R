@@ -2,6 +2,7 @@ library(tidyr)
 library(MASS)
 library(mclust)
 library(gtools)
+library(plotly)
 
 Task1 <- function() {
   fine_sampling <<- read.table("E:\\Homework\\Cognitive Modeling\\Lab3\\fine_sampling.data", header = FALSE)
@@ -333,6 +334,7 @@ Task6 <- function() {
   print(paste("Task6 Accuracy: ", cur_max))
 }
 
+### use f3
 Task7.1 <- function() {
   # iy == 1 | ih == 2 | eh == 3
   point_vowels_7 <<- fine_sampling[with(fine_sampling, vowel == "iy" | vowel == "ih" | vowel == "eh"), ]
@@ -522,5 +524,138 @@ Task7.2 <- function() {
   print(paste("Task7.2 Accuracy: ", cur_max))
 }
 
+### train on only female speakers
+Task8 <- function() {
+  # iy == 1 | ih == 2 | eh == 3
+  point_vowels_8 <<- fine_sampling[with(fine_sampling, vowel == "iy" | vowel == "ih" | vowel == "eh"), ]
+  point_vowels_8 <<- point_vowels_8[with(point_vowels_8, gender == "w"), ]
+  
+  mean_iy_f1 <- mean(point_vowels_8[point_vowels_8$vowel == "iy", ]$f1.steady)
+  mean_iy_f2 <- mean(point_vowels_8[point_vowels_8$vowel == "iy", ]$f2.steady)
+  mean_iy_f3 <- mean(point_vowels_8[point_vowels_8$vowel == "iy", ]$f3.steady)
+  
+  mean_ih_f1 <- mean(point_vowels_8[point_vowels_8$vowel == "ih", ]$f1.steady)
+  mean_ih_f2 <- mean(point_vowels_8[point_vowels_8$vowel == "ih", ]$f2.steady)
+  mean_ih_f3 <- mean(point_vowels_8[point_vowels_8$vowel == "ih", ]$f3.steady)
+  
+  mean_eh_f1 <- mean(point_vowels_8[point_vowels_8$vowel == "eh", ]$f1.steady)
+  mean_eh_f2 <- mean(point_vowels_8[point_vowels_8$vowel == "eh", ]$f2.steady)
+  mean_eh_f3 <- mean(point_vowels_8[point_vowels_8$vowel == "eh", ]$f3.steady)
+  
+  mat_iy <- cbind(point_vowels_8[point_vowels_8$vowel == "iy", ]$f1.steady
+                  , point_vowels_8[point_vowels_8$vowel == "iy", ]$f2.steady
+                  , point_vowels_8[point_vowels_8$vowel == "iy", ]$f3.steady)
+  mat_ih <- cbind(point_vowels_8[point_vowels_8$vowel == "ih", ]$f1.steady
+                  , point_vowels_8[point_vowels_8$vowel == "ih", ]$f2.steady
+                  , point_vowels_8[point_vowels_8$vowel == "ih", ]$f3.steady)
+  mat_eh <- cbind(point_vowels_8[point_vowels_8$vowel == "eh", ]$f1.steady
+                  , point_vowels_8[point_vowels_8$vowel == "eh", ]$f2.steady
+                  , point_vowels_8[point_vowels_8$vowel == "eh", ]$f3.steady)
+  
+  cov_iy_f1f2 <- cov(mat_iy)
+  cov_ih_f1f2 <- cov(mat_ih)
+  cov_eh_f1f2 <- cov(mat_eh)
+  
+  # now fake the training data
+  mydata_iy_train <- mvrnorm(n = 2000, mu = c(mean_iy_f1, mean_iy_f2, mean_iy_f3), Sigma = cov_iy_f1f2)
+  mydata_ih_train <- mvrnorm(n = 2000, mu = c(mean_ih_f1, mean_ih_f2, mean_ih_f3), Sigma = cov_ih_f1f2)
+  mydata_eh_train <- mvrnorm(n = 2000, mu = c(mean_eh_f1, mean_eh_f2, mean_eh_f3), Sigma = cov_eh_f1f2)
+  
+  # now fake the test data
+  test_iy <- mvrnorm(n = 2000, mu = c(mean_iy_f1, mean_iy_f2, mean_iy_f3), Sigma = cov_iy_f1f2)
+  test_ih <- mvrnorm(n = 2000, mu = c(mean_ih_f1, mean_ih_f2, mean_ih_f3), Sigma = cov_ih_f1f2)
+  test_eh <- mvrnorm(n = 2000, mu = c(mean_eh_f1, mean_aeh_f2, mean_eh_f3), Sigma = cov_eh_f1f2)
+  
+  # add the label column to test data
+  test_iy <- cbind(test_iy, rep(1, 2000))
+  test_ih <- cbind(test_ih, rep(2, 2000))
+  test_eh <- cbind(test_eh, rep(3, 2000)) # make this half as much as the others
+  
+  # now combine all test and train data into their own matrices
+  train_data <- rbind(mydata_iy_train, mydata_ih_train, mydata_eh_train)
+  test_data <- rbind(test_iy, test_ih, test_eh)
+  
+  # now randomize the data
+  train_data_8 <<- train_data[sample(nrow(train_data)),] 
+  test_data_8 <<- test_data[sample(nrow(test_data)),] 
+  
+  # now make some column names
+  colnames(train_data_8) <<- c("f1.steady", "f2.steady", "f3.steady")
+  colnames(test_data_8) <<- c("f1.steady", "f2.steady", "f3.steady", "vowel")
+  
+  ###
+  ### Now we do the model training
+  ###
+  
+  training_model <- Mclust(train_data_8, modelName = "VVV", G = 3, prior = priorControl())
+  predictions.prob <- estep("VVV", data=test_data_8[,1:3], parameters=training_model$parameters)
+  
+  cat_ords <- permutations(n = 3, r= 3, v = 1:3)
+  
+  final_label_ord <- c()
+  final_pred_labels <- c()
+  cur_max <- -1000000000
+  for(i in 1:length(cat_ords[,1])) {
+    cur_ord <- cat_ords[i, ]
+    
+    cur_pred <- predictions.prob$z[,cur_ord]
+    cur_pred_vec <- apply(cur_pred, 1, function(x) which(x == max(x)))
+    
+    # compare accuracies
+    true_labels <- test_data_8[,4]
+    pred_labels <- cur_pred_vec
+    tmp_acc = length(true_labels[true_labels == pred_labels]) /
+      length(true_labels)
+    
+    if(tmp_acc > cur_max) {
+      cur_max <- tmp_acc
+      final_label_ord <- cur_ord
+      final_pred_labels <- cur_pred_vec
+    }
+    
+  }
+  
+  Task8_data <<- cbind(test_data_8, final_pred_labels)
+  
+  print(paste("Task8 Accuracy: ", cur_max))
+}
 
+make.graphs <- function() {
+  ### iy, ih, eh | 1, 2, 3
+  
+  Task72_data_tmp <- Task72_data
+  # Task8_data_tmp[, "vowel"][Task8_data_tmp[, "vowel"] == 1] <- "iy"
+  # Task8_data_tmp[, "vowel"][Task8_data_tmp[, "vowel"] == 2] <- "ih"
+  # Task8_data_tmp[, "vowel"][Task8_data_tmp[, "vowel"] == 3] <- "eh"
+  
+  pal <- c("darkred", "skyblue1", "thistle3")
+  pal <- setNames(pal, c("f1", "f2", "f3"))
+  
+  x_lab <- list(title = "f1.steady")
+  y_lab <- list(title = "f2.steady")
+  z_lab <- list(title = "duration")
 
+  x = Task72_data_tmp[ ,"f1.steady"]
+  y = Task72_data_tmp[ ,"f2.steady"]
+  z = Task72_data_tmp[ ,"duration"]
+  plot_ly(data = as.data.frame(Task72_data_tmp), x=x, y=y, z=z, color=~vowel
+          , type="scatter3d", mode="markers", colors = pal) %>%
+    layout(
+      title = "Task 7.2: Learning with duration",
+      scene = list(
+        xaxis = list(title = "f1.steady"),
+        yaxis = list(title = "f2.steady"),
+        zaxis = list(title = "duration")
+      ))
+  
+  
+}
+
+test.graph <- function() {
+  # set.seed(417)
+  library(plotly)
+  temp <- rnorm(100, mean=30, sd=5)
+  pressure <- rnorm(100)
+  dtime <- 1:100
+  plot_ly(x=temp, y=pressure, z=dtime, type="scatter3d", mode="markers", color=temp)
+}
